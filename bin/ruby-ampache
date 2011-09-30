@@ -5,7 +5,7 @@ def secure_require(name)
   begin
     require name
   rescue LoadError
-    $stderr.print "#{File.basename(__FILE__)} requires #{name} gem to work\n Pleas install it with: gem install #{name}\n"
+    $stderr.print "#{File.basename(__FILE__)} requires #{name} gem to work\n Please install it with: gem install #{name}\n"
     exit
   end
 end
