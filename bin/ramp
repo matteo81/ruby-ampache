@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+# encoding:  UTF-8
+
+def secure_require(name)
+  begin
+    require name
+  rescue LoadError
+    $stderr.print "#{File.basename(__FILE__)} requires #{name} gem to work\n Please install it with: gem install #{name}\n"
+    exit
+  end
+end
+
+require 'rubygems'
+secure_require 'parseconfig'
+secure_require 'iconv'
+require 'Qt4'
+
+require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ampache')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-classes')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ui')
+
+Qt::Application.new(ARGV) do
+    MainWidget.new do 
+        show
+    end
+ 
+    exec
+end
