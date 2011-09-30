@@ -19,10 +19,13 @@ require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ampache')
 require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-classes')
 require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ui')
 
+# start main application
 Qt::Application.new(ARGV) do
+	# initialize and show the main widget
     MainWidget.new do 
         show
     end
  
+	# run
     exec
 end
