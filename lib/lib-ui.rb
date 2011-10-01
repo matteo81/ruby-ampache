@@ -2,7 +2,15 @@ require 'Qt4'
 
 class MainWidget < Qt::Widget
     slots 'updateAlbums(const QModelIndex&)'
-	def initialize(parent=nil)
+    
+    slots 'ruby_thread_timeout()'
+
+    def ruby_thread_timeout
+        sleep(@ruby_thread_sleep_period)
+    end
+
+    # Do other things to setup your program
+    def initialize(parent=nil)
 		super(parent)
 		
         self.window_title = 'Ramp'
@@ -34,6 +42,12 @@ class MainWidget < Qt::Widget
             l.add_widget(@albumListView)
             l.add_widget(button)
         end
+        
+        # Enable ruby threading
+        @ruby_thread_sleep_period = 0.01
+        @ruby_thread_timer = Qt::Timer.new(self)
+        connect(@ruby_thread_timer, SIGNAL('timeout()'), SLOT('ruby_thread_timeout()'))
+        @ruby_thread_timer.start(0)
 		
 		# do some initialization
 		# using a separate thread to avoid GUI freeze
@@ -63,6 +77,7 @@ class MainWidget < Qt::Widget
         artists.each do |artist|
             item = Qt::StandardItem.new(artist.name)
             item.setData(Qt::Variant.fromValue(artist), Qt::UserRole)
+            item.setEditable false
             @artistModel.appendRow item
         end
         
@@ -82,11 +97,11 @@ class MainWidget < Qt::Widget
                 albums.each do |album|
                     item = Qt::StandardItem.new(album.name)
                     item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
+                    item.setEditable false
                     @albumModel.appendRow item
                 end
                 
                 @albumListView.setModel @albumModel
-                Thread.pass
             }
         end
     end
