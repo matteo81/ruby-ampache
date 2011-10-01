@@ -21,11 +21,11 @@ class MainWidget < Qt::Widget
                   self, SLOT( 'updateAlbums(const QModelIndex&)' ) )
         @albumListView = Qt::ListView.new(self);
  
-        # artist model (defined simply as a stringlist)
+        # various models
         # see model/view programming
-        # http://doc.qt.nokia.com/latest/model-view-programming.html    
-        @artistModel = Qt::StringListModel.new
-        @albumModel = Qt::StringListModel.new
+        # http://doc.qt.nokia.com/latest/model-view-programming.html
+        @artistModel = Qt::StandardItemModel.new
+        @albumModel = Qt::StandardItemModel.new
         
 		# initialize the layout of the main widget
         layout = Qt::VBoxLayout.new(self) do |l|
@@ -56,36 +56,32 @@ class MainWidget < Qt::Widget
     
     def updateArtists
         artists = @ampache.artists
-        names = []
-        # extract the name from AmpacheArtist
-        # TODO: don't lose the uid
+                
+        # for every artist extract the name (which will be displayed)
+        # and the whole class (attached as data)
         artists.each do |artist|
-            names << artist.name
+            item = Qt::StandardItem.new(artist.name)
+            item.setData(Qt::Variant.fromValue(artist), Qt::UserRole)
+            @artistModel.appendRow item
         end
-        # initialize the model
-        @artistModel.setStringList names
         
         # set the model to the view
         @artistListView.setModel @artistModel
     end
     
     def updateAlbums(index)
-        @albumListView.setModel Qt::StringListModel.new
+        @albumListView.setModel Qt::StandardItemModel.new
+        @albumModel = Qt::StandardItemModel.new
         Thread.new do
             # Get the selected artist
-            # TODO: should return the AmpacheArtist instead of just a string containing the name
-            artist = @artistModel.data(index, Qt::DisplayRole).value
-
-            # TODO: this is highly inefficient
-            # Must avoid to call @ampache.artists again
-            albums = @ampache.albums(@ampache.artists(artist).first)
-            names=[]
+            albums = @ampache.albums(@artistModel.data(index, Qt::UserRole).value)
             
             albums.each do |album|
-                names << album.name
+                item = Qt::StandardItem.new(album.name)
+                item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
+                @albumModel.appendRow item
             end
-            # initialize the model
-            @albumModel.setStringList names
+            
             @albumListView.setModel @albumModel
         end
     end
