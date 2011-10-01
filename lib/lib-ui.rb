@@ -17,7 +17,7 @@ class MainWidget < Qt::Widget
 		# the list widget showing the artists
         @artistListView = Qt::ListView.new(self)
         
-        Qt::Object.connect( @artistListView, SIGNAL('clicked(const QModelIndex&)'),
+        Qt::Object.connect( @artistListView, SIGNAL('activated(const QModelIndex&)'),
                   self, SLOT( 'updateAlbums(const QModelIndex&)' ) )
         @albumListView = Qt::ListView.new(self);
  
@@ -26,6 +26,7 @@ class MainWidget < Qt::Widget
         # http://doc.qt.nokia.com/latest/model-view-programming.html
         @artistModel = Qt::StandardItemModel.new
         @albumModel = Qt::StandardItemModel.new
+        @albumMutex = Mutex.new
         
 		# initialize the layout of the main widget
         layout = Qt::VBoxLayout.new(self) do |l|
@@ -71,18 +72,22 @@ class MainWidget < Qt::Widget
     
     def updateAlbums(index)
         @albumListView.setModel Qt::StandardItemModel.new
-        @albumModel = Qt::StandardItemModel.new
+        
         Thread.new do
             # Get the selected artist
-            albums = @ampache.albums(@artistModel.data(index, Qt::UserRole).value)
-            
-            albums.each do |album|
-                item = Qt::StandardItem.new(album.name)
-                item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
-                @albumModel.appendRow item
-            end
-            
-            @albumListView.setModel @albumModel
+            @albumMutex.synchronize {
+                @albumModel = Qt::StandardItemModel.new
+                albums = @ampache.albums(@artistModel.data(index, Qt::UserRole).value)
+                
+                albums.each do |album|
+                    item = Qt::StandardItem.new(album.name)
+                    item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
+                    @albumModel.appendRow item
+                end
+                
+                @albumListView.setModel @albumModel
+                Thread.pass
+            }
         end
     end
 end
