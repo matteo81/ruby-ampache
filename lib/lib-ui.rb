@@ -9,7 +9,6 @@ class MainWidget < Qt::Widget
     sleep(@ruby_thread_sleep_period)
   end
 
-  # Do other things to setup your program
   def initialize(parent=nil)
     super(parent)
   
@@ -75,12 +74,12 @@ class MainWidget < Qt::Widget
     # and the whole class (attached as data)
     artists.each do |artist|
       item = Qt::StandardItem.new(artist.name)
+      # attach the AmpacheArtist object as Data (to extract additional info)
       item.setData(Qt::Variant.fromValue(artist), Qt::UserRole)
       item.setEditable false
       @artistModel.appendRow item
     end
     
-    # set the model to the view
     @artistListView.setModel @artistModel
   end
     
@@ -88,15 +87,15 @@ class MainWidget < Qt::Widget
     @albumListView.setModel Qt::StandardItemModel.new
     
     Thread.new do
-      # Get the selected artist
       @albumMutex.synchronize {
         @albumModel = Qt::StandardItemModel.new
         albums = @ampache.albums(@artistModel.data(index, Qt::UserRole).value).sort
         
         albums.each do |album|
           string = album.name
-          string = "#{album.name} (#{album.year})" if !album.year.nil?
+          string += " (#{album.year})" if !album.year.nil?
           item = Qt::StandardItem.new(string)
+          # attach the AmpacheAlbum object as Data (to extract additional info)
           item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
           item.setEditable false
           @albumModel.appendRow item
