@@ -1,5 +1,18 @@
 require 'open4'
 require 'timeout'
+
+class AmpacheStats
+attr_reader :songs, :albums, :artists, :update, :add, :clean
+  def initialize(doc)
+    @songs = doc.elements["root/songs"].cdatas[0].to_s.to_i
+    @albums = doc.elements["root/albums"].cdatas[0].to_s.to_i
+    @artists = doc.elements["root/artists"].cdatas[0].to_s.to_i
+    @update = DateTime.parse doc.elements["root/update"].cdatas.to_s
+    @add = DateTime.parse doc.elements["root/add"].cdatas.to_s
+    @clean = DateTime.parse doc.elements["root/clean"].cdatas.to_s
+  end
+end
+
 class AmpacheArtist
 
   # include play module
@@ -26,14 +39,16 @@ end
 
 class AmpacheAlbum
 
-  def initialize(ar, uid, name, artist)
+  def initialize(ar, uid, name, artist, year, disk)
     @ar = ar
     @uid = uid
     @name = name
     @artist = artist
+    @year = year.to_i
+    @disk = disk
   end
 
-  attr_reader :uid, :name, :artist
+  attr_reader :uid, :name, :artist, :year, :disk
 
   def songs
     @songs ||= @ar.songs(self)
@@ -45,6 +60,13 @@ class AmpacheAlbum
     end
   end
 
+  def <=>(other)
+    if @name == other.name
+      @disk <=> other.disk
+    else 
+      @year <=> other.year
+    end
+  end
 end
 
 class AmpacheSong
