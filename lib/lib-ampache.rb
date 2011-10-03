@@ -58,6 +58,9 @@ class AmpacheRuby
       if !ENV['http_proxy'].nil?
         proxy_uri = URI.parse(ENV['http_proxy'])
         http_class = Net::HTTP::Proxy(proxy_uri.host, proxy_uri.port)
+      elsif 
+        proxy_uri = URI.parse(IO.popen('kreadconfig --file kioslaverc --group Proxy\ Settings --key httpProxy').readlines.first)
+        http_class = Net::HTTP::Proxy(proxy_uri.host, proxy_uri.port)
       else
         http_class = Net::HTTP
       end
