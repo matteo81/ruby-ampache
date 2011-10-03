@@ -2,6 +2,7 @@ require 'Qt4'
 
 class MainWidget < Qt::Widget
   slots 'updateAlbums(const QModelIndex&)'
+  slots 'playAlbum(const QModelIndex&)'
   
   slots 'ruby_thread_timeout()'
 
@@ -23,11 +24,13 @@ class MainWidget < Qt::Widget
   
     # the list widget showing the artists
     @artistListView = Qt::ListView.new(self)
-    
     Qt::Object.connect( @artistListView, SIGNAL('activated(const QModelIndex&)'),
               self, SLOT( 'updateAlbums(const QModelIndex&)' ) )
+    
     @albumListView = Qt::ListView.new(self);
-
+    Qt::Object.connect( @albumListView, SIGNAL('doubleClicked(const QModelIndex&)'),
+              self, SLOT( 'playAlbum(const QModelIndex&)' ) )
+    
     # various models
     # see model/view programming
     # http://doc.qt.nokia.com/latest/model-view-programming.html
@@ -55,11 +58,16 @@ class MainWidget < Qt::Widget
       initializeConnection
       updateArtists
     end
+    
+    @playlist = AmpachePlaylist.new
   end
 
   def initializeConnection
     begin
       ar_config = ParseConfig.new(File.expand_path('~/.ruby-ampache'))
+      $options = {}
+      $options[:path] = ar_config.get_value('MPLAYER_PATH')
+      $options[:timeout] = ar_config.get_value('TIMEOUT').to_i
     rescue
       raise "\nPlease create a .ruby-ampache file on your home\n See http://github.com/ghedamat/ruby-ampache for infos\n"
     end
@@ -104,5 +112,9 @@ class MainWidget < Qt::Widget
         @albumListView.setModel @albumModel
       }
     end
+  end
+  
+  def playAlbum(index)
+    @albumModel.data(index, Qt::UserRole).value.add_to_playlist(@playlist) 
   end
 end
