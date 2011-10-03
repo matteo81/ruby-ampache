@@ -44,7 +44,7 @@ class AmpacheAlbum
     @uid = uid
     @name = name
     @artist = artist
-    @year = year.to_i
+    @year = year.to_i 
     @disk = disk
   end
 

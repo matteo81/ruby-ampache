@@ -101,7 +101,7 @@ class MainWidget < Qt::Widget
         
         albums.each do |album|
           string = album.name
-          string += " (#{album.year})" if !album.year.nil?
+          string += " (#{album.year})" unless (album.year.nil? or album.year == 0)
           item = Qt::StandardItem.new(string)
           # attach the AmpacheAlbum object as Data (to extract additional info)
           item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
