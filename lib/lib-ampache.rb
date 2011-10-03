@@ -55,9 +55,15 @@ class AmpacheRuby
   # generic api method call
   def callApiMethod(method, args={})
     begin
+      if !ENV['http_proxy'].nil?
+        proxy_uri = URI.parse(ENV['http_proxy'])
+        http_class = Net::HTTP::Proxy(proxy_uri.host, proxy_uri.port)
+      else
+        http_class = Net::HTTP
+      end
       args['auth'] ||= token if token
       url = path + "/server/xml.server.php?action=#{method}&#{args.keys.collect { |k| "#{k}=#{args[k]}" }.join('&')}"
-      response = Net::HTTP.get_response(host, url)
+      response = http_class.get_response(host, url)
       return Nokogiri::XML(response.body)
     rescue Errno::ECONNREFUSED => e
       warn "Ampache closed with the following error"
