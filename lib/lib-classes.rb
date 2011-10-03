@@ -135,7 +135,7 @@ class AmpachePlaylist
   end
 
   def add(song)
-    say(HighLine.new.color("adding song ",:green) + "#{song.title}")
+    #say(HighLine.new.color("adding song ",:green) + "#{song.title}")
     if !@pid && !started?
       mplayer_start(song)
     else
