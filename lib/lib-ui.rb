@@ -3,6 +3,7 @@ require 'Qt4'
 class MainWidget < Qt::Widget
   slots 'updateAlbums(const QModelIndex&)'
   slots 'playAlbum(const QModelIndex&)'
+  slots 'updateSongs(const QModelIndex&)'
   
   slots 'ruby_thread_timeout()'
 
@@ -30,18 +31,25 @@ class MainWidget < Qt::Widget
     @albumListView = Qt::ListView.new(self);
     Qt::Object.connect( @albumListView, SIGNAL('doubleClicked(const QModelIndex&)'),
               self, SLOT( 'playAlbum(const QModelIndex&)' ) )
+    Qt::Object.connect( @albumListView, SIGNAL('activated(const QModelIndex&)'),
+              self, SLOT( 'updateSongs(const QModelIndex&)' ) )
     
+    @songListView = Qt::ListView.new(self);
     # various models
     # see model/view programming
     # http://doc.qt.nokia.com/latest/model-view-programming.html
     @artistModel = Qt::StandardItemModel.new
     @albumModel = Qt::StandardItemModel.new
+    @songModel = Qt::StandardItemModel.new
+    
     @albumMutex = Mutex.new
+    @songMutex = Mutex.new
       
     # initialize the layout of the main widget
     layout = Qt::VBoxLayout.new(self) do |l|
       l.add_widget(@artistListView)
       l.add_widget(@albumListView)
+      l.add_widget(@songListView)
       l.add_widget(button)
     end
       
@@ -116,5 +124,29 @@ class MainWidget < Qt::Widget
   
   def playAlbum(index)
     @albumModel.data(index, Qt::UserRole).value.add_to_playlist(@playlist) 
+  end
+  
+  def updateSongs(index)
+    @songListView.setModel Qt::StandardItemModel.new
+    
+    Thread.new do
+      @songMutex.synchronize {
+        @songModel = Qt::StandardItemModel.new
+        puts @albumModel.data(index, Qt::UserRole).value.name
+        songs = @ampache.songs(@albumModel.data(index, Qt::UserRole).value).sort
+        
+        songs.each do |song|
+          puts song.title
+          string = "#{song.track}. #{song.title}"
+          item = Qt::StandardItem.new(string)
+          # attach the AmpacheAlbum object as Data (to extract additional info)
+          item.setData(Qt::Variant.fromValue(song), Qt::UserRole)
+          item.setEditable false
+          @songModel.appendRow item
+        end
+        
+        @songListView.setModel @songModel
+      }
+    end
   end
 end

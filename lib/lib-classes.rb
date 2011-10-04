@@ -38,7 +38,8 @@ end
 
 
 class AmpacheAlbum
-
+  include Comparable
+  
   def initialize(ar, uid, name, artist, year, disk)
     @ar = ar
     @uid = uid
@@ -70,22 +71,31 @@ class AmpacheAlbum
 end
 
 class AmpacheSong
-
-  def initialize(ar, uid, title, artist, album, url)
+  include Comparable
+  
+  def initialize(ar, uid, title, artist, album, url, track)
     @ar = ar
     @uid = uid
     @title = title
     @artist = artist
     @album = album
     @url = url
+    @track = track.to_i
   end
 
-  attr_reader :uid, :title, :artist, :album, :url
+  attr_reader :uid, :title, :artist, :album, :url, :track
 
   def add_to_playlist(pl)
     pl.add(self)
   end
 
+  def <=>(other)
+    if @album == other.album
+      @track <=> other.track
+    else
+      @album <=> other.album
+    end
+  end
 end
 
 class AmpachePlaylist

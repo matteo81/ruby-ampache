@@ -103,7 +103,7 @@ class AmpacheRuby
     args = {'filter' => album.uid.to_s}
     doc = callApiMethod("album_songs", args)
     doc.xpath("//song").each do |s|
-      songs << AmpacheSong.new(self, s['id'], s.at("title").content, album.artist, album, s.at("url").content)
+      songs << AmpacheSong.new(self, s['id'], s.at("title").content, album.artist, album, s.at("url").content, s.at("track").content)
     end
     return songs
   end
