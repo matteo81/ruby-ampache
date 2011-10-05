@@ -1,18 +1,6 @@
 require 'open4'
 require 'timeout'
 
-class AmpacheStats
-attr_reader :songs, :albums, :artists, :update, :add, :clean
-  def initialize(doc)
-    @songs = doc.elements["root/songs"].cdatas[0].to_s.to_i
-    @albums = doc.elements["root/albums"].cdatas[0].to_s.to_i
-    @artists = doc.elements["root/artists"].cdatas[0].to_s.to_i
-    @update = DateTime.parse doc.elements["root/update"].cdatas.to_s
-    @add = DateTime.parse doc.elements["root/add"].cdatas.to_s
-    @clean = DateTime.parse doc.elements["root/clean"].cdatas.to_s
-  end
-end
-
 class AmpacheArtist
 
   # include play module

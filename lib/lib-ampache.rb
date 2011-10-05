@@ -2,6 +2,7 @@ require 'nokogiri'
 require 'net/http'
 require 'open-uri'
 require 'digest/sha2'
+require 'date'
 
 require File.join(File.dirname(__FILE__), 'lib-ampache')
 
@@ -18,24 +19,22 @@ artist_instance.albums or ampache_ruby.instance.albums(artist_instance)
 =end
 
 class AmpacheRuby
-
-
   def initialize(host, user, psw)
     uri = URI.parse(host)
     @host = uri.host
     @path = uri.path
     @user = user
     @psw = psw
-    @token = nil
     @token = getAuthToken(user, psw)
   end
 
+  attr_reader :stats
   attr_accessor :host, :path, :user, :psw, :token, :playlist
 
-  # tryies to obtain an auth token
+  # tries to obtain an auth token
   def getAuthToken(user, psw)
     begin
-      action= "handshake"
+      action = "handshake"
       # auth string
       key = Digest::SHA2.new << psw
       time = Time.now.to_i.to_s
@@ -44,6 +43,8 @@ class AmpacheRuby
       args = {'auth' => psk, 'timestamp'=> time, 'version' => '350001', 'user' => user}
       doc = callApiMethod(action, args);
 
+      @stats = AmpacheStats.new(doc.at("songs").content, doc.at("albums").content, doc.at("artists").content, 
+                                doc.at("update").content, doc.at("add").content, doc.at("clean").content)
       return doc.at("auth").content
     rescue Exception => e 
       warn ""
@@ -107,6 +108,25 @@ class AmpacheRuby
     end
     return songs
   end
-
 end
 
+class AmpacheStats
+attr_reader :songs, :albums, :artists, :update, :add, :clean
+  def initialize(songs, albums, artists, update, add, clean)
+    @songs = songs
+    @albums = albums
+    @artists = artists
+    @update = DateTime.parse update
+    @add = DateTime.parse add
+    @clean = DateTime.parse clean
+  end
+  
+  def to_s
+    "Song #: #{@songs}
+Album #: #{@albums}
+Artist #: #{@artists}
+Last update: #{@update}
+Last add: #{@add}
+Last clean: #{@clean}"
+  end
+end
