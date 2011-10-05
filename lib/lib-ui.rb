@@ -132,11 +132,9 @@ class MainWidget < Qt::Widget
     Thread.new do
       @songMutex.synchronize {
         @songModel = Qt::StandardItemModel.new
-        puts @albumModel.data(index, Qt::UserRole).value.name
         songs = @ampache.songs(@albumModel.data(index, Qt::UserRole).value).sort
         
         songs.each do |song|
-          puts song.title
           string = "#{song.track}. #{song.title}"
           item = Qt::StandardItem.new(string)
           # attach the AmpacheAlbum object as Data (to extract additional info)
