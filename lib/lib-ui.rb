@@ -37,7 +37,7 @@ class MainWidget < Qt::MainWindow
     end
     collection_and_filter = Qt::Widget.new(splitter)
     collection_and_filter.set_layout layout
-    @playlist_view = Qt::TableView.new(splitter)
+    @playlist_view = Qt::ListView.new(splitter)
     
     Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
                         self, SLOT( 'update_collection(const QModelIndex&)' ) )
@@ -147,6 +147,7 @@ class MainWidget < Qt::MainWindow
     @playlist.stop
     @playlist = AmpachePlaylist.new
     @collection_model.data(index, Qt::UserRole).value.add_to_playlist @playlist
+    update_playlist
   end
   
   def closeEvent(event)
@@ -164,5 +165,20 @@ class MainWidget < Qt::MainWindow
     @proxy_model.filter_reg_exp = text
     @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
     @collection_view.set_model @proxy_model
+  end
+  
+  def update_playlist
+    @playlist_model = Qt::StandardItemModel.new
+    @playlist.each do |song|
+      string = "#{song.track}. #{song.title}"
+      item = Qt::StandardItem.new(string)
+      # attach the AmpacheSong object as Data (to extract additional info)
+      item.setData(Qt::Variant.from_value(song), Qt::UserRole)
+      item.setEditable false
+      
+      @playlist_model.append_row item
+    end
+    
+    @playlist_view.set_model @playlist_model
   end
 end
