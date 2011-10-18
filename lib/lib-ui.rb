@@ -1,10 +1,8 @@
 require 'Qt4'
 
-class MainWidget < Qt::Widget
-  slots 'updateAlbums(const QModelIndex&)'
-  slots 'playAlbum(const QModelIndex&)'
-  slots 'updateSongs(const QModelIndex&)'
-  
+class MainWidget < Qt::MainWindow
+  slots 'update_collection(const QModelIndex&)'
+  slots 'add_to_playlist(const QModelIndex&)'
   slots 'ruby_thread_timeout()'
 
   def ruby_thread_timeout
@@ -22,37 +20,29 @@ class MainWidget < Qt::Widget
     button = Qt::PushButton.new('Quit', self) do
       connect(SIGNAL :clicked) { Qt::Application.instance.quit }
     end
+    
+    splitter = Qt::Splitter.new(self)
   
     # the list widget showing the artists
-    @artistListView = Qt::ListView.new(self)
-    Qt::Object.connect( @artistListView, SIGNAL('activated(const QModelIndex&)'),
-              self, SLOT( 'updateAlbums(const QModelIndex&)' ) )
+    @collection_view = Qt::TreeView.new(splitter)
+    @playlist_view = Qt::TableView.new(splitter)
     
-    @albumListView = Qt::ListView.new(self);
-    Qt::Object.connect( @albumListView, SIGNAL('doubleClicked(const QModelIndex&)'),
-              self, SLOT( 'playAlbum(const QModelIndex&)' ) )
-    Qt::Object.connect( @albumListView, SIGNAL('activated(const QModelIndex&)'),
-              self, SLOT( 'updateSongs(const QModelIndex&)' ) )
+    @collection_view.header_hidden = true
     
-    @songListView = Qt::ListView.new(self);
+    Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
+                        self, SLOT( 'update_collection(const QModelIndex&)' ) )
+    Qt::Object.connect( @collection_view, SIGNAL('doubleClicked(const QModelIndex&)'),
+                        self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
+    set_central_widget(splitter)
+    
     # various models
     # see model/view programming
     # http://doc.qt.nokia.com/latest/model-view-programming.html
-    @artistModel = Qt::StandardItemModel.new
-    @albumModel = Qt::StandardItemModel.new
-    @songModel = Qt::StandardItemModel.new
+    @playlist_model = Qt::StandardItemModel.new
+    @collection_model = Qt::StandardItemModel.new
     
-    @albumMutex = Mutex.new
-    @songMutex = Mutex.new
-      
-    # initialize the layout of the main widget
-    layout = Qt::VBoxLayout.new(self) do |l|
-      l.add_widget(@artistListView)
-      l.add_widget(@albumListView)
-      l.add_widget(@songListView)
-      l.add_widget(button)
-    end
-      
+    @collection_mutex = Mutex.new
+    
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
     @ruby_thread_timer = Qt::Timer.new(self)
@@ -62,15 +52,14 @@ class MainWidget < Qt::Widget
     # do some initialization
     # using a separate thread to avoid GUI freeze
     initialize = Thread.new do
-      # attempt to connect to Ampache server
-      initializeConnection
-      updateArtists
+      initialize_connection
+      update_artists
     end
     
     @playlist = AmpachePlaylist.new
   end
 
-  def initializeConnection
+  def initialize_connection
     begin
       ar_config = ParseConfig.new(File.expand_path('~/.ruby-ampache'))
       $options = {}
@@ -84,68 +73,77 @@ class MainWidget < Qt::Widget
     puts @ampache.stats
   end
     
-  def updateArtists
+  def update_artists
     artists = @ampache.artists
             
+    parent_item = @collection_model.invisible_root_item
     # for every artist extract the name (which will be displayed)
     # and the whole class (attached as data)
     artists.each do |artist|
       item = Qt::StandardItem.new(artist.name)
       # attach the AmpacheArtist object as Data (to extract additional info)
-      item.setData(Qt::Variant.fromValue(artist), Qt::UserRole)
+      item.set_data(Qt::Variant.from_value(artist), Qt::UserRole)
+      item.editable = false
+      @collection_model.append_row(item)
+    end
+    
+    @collection_view.set_model @collection_model
+  end
+    
+  def update_collection(index)
+    Thread.new do
+      @collection_mutex.synchronize {
+        selected_item = @collection_model.item_from_index(index)
+        return if selected_item.has_children    
+  
+        case @collection_model.data(index, Qt::UserRole).value
+          when AmpacheArtist then update_albums(index)
+          when AmpacheAlbum then update_songs(index)
+        end
+      
+        @collection_view.set_model @collection_model
+        @collection_view.expand index
+      }
+   end
+  end
+  
+  def update_albums(index)
+    selected_item = @collection_model.item_from_index(index)
+    albums = @ampache.albums(@collection_model.data(index, Qt::UserRole).value).sort
+        
+    albums.each do |album|
+      string = album.name
+      string += " (#{album.year})" unless (album.year.nil? or album.year == 0)
+      item = Qt::StandardItem.new(string)
+      # attach the AmpacheAlbum object as Data (to extract additional info)
+      item.set_data(Qt::Variant.from_value(album), Qt::UserRole)
+      item.editable = false
+      selected_item.append_row item
+    end
+  end
+  
+  def update_songs(index)
+    selected_item = @collection_model.item_from_index(index)
+    songs = @ampache.songs(@collection_model.data(index, Qt::UserRole).value).sort
+      
+    songs.each do |song|
+      string = "#{song.track}. #{song.title}"
+      item = Qt::StandardItem.new(string)
+      # attach the AmpacheSong object as Data (to extract additional info)
+      item.setData(Qt::Variant.from_value(song), Qt::UserRole)
       item.setEditable false
-      @artistModel.appendRow item
-    end
-    
-    @artistListView.setModel @artistModel
-  end
-    
-  def updateAlbums(index)
-    @albumListView.setModel Qt::StandardItemModel.new
-    
-    Thread.new do
-      @albumMutex.synchronize {
-        @albumModel = Qt::StandardItemModel.new
-        albums = @ampache.albums(@artistModel.data(index, Qt::UserRole).value).sort
-        
-        albums.each do |album|
-          string = album.name
-          string += " (#{album.year})" unless (album.year.nil? or album.year == 0)
-          item = Qt::StandardItem.new(string)
-          # attach the AmpacheAlbum object as Data (to extract additional info)
-          item.setData(Qt::Variant.fromValue(album), Qt::UserRole)
-          item.setEditable false
-          @albumModel.appendRow item
-        end
-        
-        @albumListView.setModel @albumModel
-      }
+      selected_item.append_row item
     end
   end
   
-  def playAlbum(index)
-    @albumModel.data(index, Qt::UserRole).value.add_to_playlist(@playlist) 
+  def add_to_playlist(index)
+    @playlist.stop
+    @playlist = AmpachePlaylist.new
+    @collection_model.data(index, Qt::UserRole).value.add_to_playlist @playlist
   end
   
-  def updateSongs(index)
-    @songListView.setModel Qt::StandardItemModel.new
-    
-    Thread.new do
-      @songMutex.synchronize {
-        @songModel = Qt::StandardItemModel.new
-        songs = @ampache.songs(@albumModel.data(index, Qt::UserRole).value).sort
-        
-        songs.each do |song|
-          string = "#{song.track}. #{song.title}"
-          item = Qt::StandardItem.new(string)
-          # attach the AmpacheAlbum object as Data (to extract additional info)
-          item.setData(Qt::Variant.fromValue(song), Qt::UserRole)
-          item.setEditable false
-          @songModel.appendRow item
-        end
-        
-        @songListView.setModel @songModel
-      }
-    end
+  def closeEvent(event)
+    @playlist.stop
+    event.accept
   end
 end

@@ -25,7 +25,6 @@ Qt::Application.new(ARGV) do
   MainWidget.new do 
     show
   end
-
-# run
+  
   exec
 end
