@@ -219,6 +219,10 @@ class AmpachePlaylist
     end
 
   end
+  
+  def each
+    @list.each {|i| yield(i)}
+  end
 
 end
 

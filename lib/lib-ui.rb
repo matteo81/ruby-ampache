@@ -2,6 +2,7 @@ require 'Qt4'
 
 class MainWidget < Qt::MainWindow
   slots 'update_collection(const QModelIndex&)'
+  slots 'filter_collection(const QString&)'
   slots 'add_to_playlist(const QModelIndex&)'
   slots 'ruby_thread_timeout()'
 
@@ -16,38 +17,44 @@ class MainWidget < Qt::MainWindow
     # resize to a sane value
     # TODO: load/save on startup/close
     resize(800, 400)
-
-    button = Qt::PushButton.new('Quit', self) do
-      connect(SIGNAL :clicked) { Qt::Application.instance.quit }
-    end
-    
-    splitter = Qt::Splitter.new(self)
-  
-    # the list widget showing the artists
-    @collection_view = Qt::TreeView.new(splitter)
-    @playlist_view = Qt::TableView.new(splitter)
-    
-    @collection_view.header_hidden = true
-    
-    Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
-                        self, SLOT( 'update_collection(const QModelIndex&)' ) )
-    Qt::Object.connect( @collection_view, SIGNAL('doubleClicked(const QModelIndex&)'),
-                        self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
-    set_central_widget(splitter)
-    
+        
     # various models
     # see model/view programming
     # http://doc.qt.nokia.com/latest/model-view-programming.html
     @playlist_model = Qt::StandardItemModel.new
     @collection_model = Qt::StandardItemModel.new
     
-    @collection_mutex = Mutex.new
+    # layout the widgets
+    splitter = Qt::Splitter.new(self)
+    set_central_widget(splitter)
+  
+    @filter_input = Qt::LineEdit.new
+    @collection_view = Qt::TreeView.new
+    @collection_view.header_hidden = true
+    layout = Qt::VBoxLayout.new do |l|
+      l.add_widget @filter_input
+      l.add_widget @collection_view
+    end
+    collection_and_filter = Qt::Widget.new(splitter)
+    collection_and_filter.set_layout layout
+    @playlist_view = Qt::ListView.new(splitter)
+    
+    Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
+                        self, SLOT( 'update_collection(const QModelIndex&)' ) )
+    Qt::Object.connect( @collection_view, SIGNAL('doubleClicked(const QModelIndex&)'),
+                        self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
+    Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
+                        self, SLOT( 'filter_collection(const QString&)' ) )
+    
+    @proxy_model = Qt::SortFilterProxyModel.new
     
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
     @ruby_thread_timer = Qt::Timer.new(self)
     connect(@ruby_thread_timer, SIGNAL('timeout()'), SLOT('ruby_thread_timeout()'))
     @ruby_thread_timer.start(0)
+    
+    @collection_mutex = Mutex.new
   
     # do some initialization
     # using a separate thread to avoid GUI freeze
@@ -140,10 +147,38 @@ class MainWidget < Qt::MainWindow
     @playlist.stop
     @playlist = AmpachePlaylist.new
     @collection_model.data(index, Qt::UserRole).value.add_to_playlist @playlist
+    update_playlist
   end
   
   def closeEvent(event)
     @playlist.stop
     event.accept
+  end
+      
+  def filter_collection(text)
+    if text.empty?
+      @collection_view.set_model @collection_model
+      return
+    end
+    
+    @proxy_model.set_source_model @collection_model
+    @proxy_model.filter_reg_exp = text
+    @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
+    @collection_view.set_model @proxy_model
+  end
+  
+  def update_playlist
+    @playlist_model = Qt::StandardItemModel.new
+    @playlist.each do |song|
+      string = "#{song.track}. #{song.title}"
+      item = Qt::StandardItem.new(string)
+      # attach the AmpacheSong object as Data (to extract additional info)
+      item.setData(Qt::Variant.from_value(song), Qt::UserRole)
+      item.setEditable false
+      
+      @playlist_model.append_row item
+    end
+    
+    @playlist_view.set_model @playlist_model
   end
 end
