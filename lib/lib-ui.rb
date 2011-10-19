@@ -112,6 +112,8 @@ class MainWidget < Qt::MainWindow
   def update_collection(index)
     Thread.new do
       @collection_mutex.synchronize {
+        orig_index = index
+        index = @proxy_model.map_to_source(index) unless @filter_input.text.empty?
         selected_item = @collection_model.item_from_index(index)
         return if selected_item.has_children    
   
@@ -120,8 +122,8 @@ class MainWidget < Qt::MainWindow
           when AmpacheAlbum then update_songs(index)
         end
       
-        @collection_view.set_model @collection_model
-        @collection_view.expand index
+        filter_collection(@filter_input.text) unless @filter_input.text.empty?
+        @collection_view.expand orig_index
       }
    end
   end
