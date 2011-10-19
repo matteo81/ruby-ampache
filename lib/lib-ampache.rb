@@ -47,9 +47,7 @@ class AmpacheRuby
                                 doc.at("update").content, doc.at("add").content, doc.at("clean").content)
       return doc.at("auth").content
     rescue Exception => e 
-      warn ""
-      warn  "token not valid or expired, check your username and password" 
-      warn ""
+      raise "token not valid or expired, check your username and password"
     end
   end
 
@@ -70,9 +68,7 @@ class AmpacheRuby
       response = http_class.get_response(host, url)
       return Nokogiri::XML(response.body)
     rescue Errno::ECONNREFUSED => e
-      warn "Ampache closed with the following error"
-      warn e.message
-      exit
+      raise "Ampache closed with the following error: #{e.message}"
     end
   end
 
@@ -84,7 +80,7 @@ class AmpacheRuby
     artists = []
     doc = callApiMethod("artists", args)
     doc.xpath("//artist").each do |a|
-      artists << AmpacheArtist.new(self, a['id'], a.at("name").content)
+      artists << AmpacheArtist.new(self, a)
     end
     return artists
   end
@@ -94,7 +90,7 @@ class AmpacheRuby
     args = {'filter' => artist.uid.to_s}
     doc = callApiMethod("artist_albums", args)
     doc.xpath("//album").each do |a|
-      albums << AmpacheAlbum.new(self, a['id'], a.at("name").content, artist, a.at("year").content, a.at("disk").content)
+      albums << AmpacheAlbum.new(self, a, artist)
     end
     return albums
   end
@@ -104,7 +100,7 @@ class AmpacheRuby
     args = {'filter' => album.uid.to_s}
     doc = callApiMethod("album_songs", args)
     doc.xpath("//song").each do |s|
-      songs << AmpacheSong.new(self, s['id'], s.at("title").content, album.artist, album, s.at("url").content, s.at("track").content)
+      songs << AmpacheSong.new(self, s, album)
     end
     return songs
   end
@@ -113,9 +109,9 @@ end
 class AmpacheStats
 attr_reader :songs, :albums, :artists, :update, :add, :clean
   def initialize(songs, albums, artists, update, add, clean)
-    @songs = songs
-    @albums = albums
-    @artists = artists
+    @songs = songs.to_i
+    @albums = albums.to_i
+    @artists = artists.to_i
     @update = DateTime.parse update
     @add = DateTime.parse add
     @clean = DateTime.parse clean

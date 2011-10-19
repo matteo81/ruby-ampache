@@ -1,44 +1,45 @@
 require 'open4'
 require 'timeout'
 
-class AmpacheArtist
-
-  # include play module
-  def initialize(ar, uid, name)
+module AmpacheXmlAccessor
+  def initialize(ar, xml)
     @ar = ar
-    @uid = uid
-    @name = name
+    @xml = xml
   end
 
-  attr_reader :uid, :name
+  attr_reader :ar
+  
+  def method_missing( method_name, *args )
+    @xml.children.each do |child|
+      return child.content if (child.name == method_name.to_s and child.element?)
+    end
+    super
+  end
+  
+  def uid
+    return @xml['id']
+  end
+end
+
+class AmpacheArtist
+  include AmpacheXmlAccessor  
 
   def albums
     @albums ||= @ar.albums(self)
   end
 
   def add_to_playlist(pl)
-  albums.each do |s|
-    s.add_to_playlist(pl)
-    sleep 1
-  end
+    albums.each do |s|
+      s.add_to_playlist(pl)
+      sleep 1
+    end
+  end  
 end
-end
-
 
 class AmpacheAlbum
   include Comparable
+  include AmpacheXmlAccessor
   
-  def initialize(ar, uid, name, artist, year, disk)
-    @ar = ar
-    @uid = uid
-    @name = name
-    @artist = artist
-    @year = year.to_i 
-    @disk = disk
-  end
-
-  attr_reader :uid, :name, :artist, :year, :disk
-
   def songs
     @songs ||= @ar.songs(self)
   end
@@ -50,38 +51,27 @@ class AmpacheAlbum
   end
 
   def <=>(other)
-    if @name == other.name
-      @disk <=> other.disk
+    if name == other.name
+      disk.to_i <=> other.disk.to_i
     else 
-      @year <=> other.year
+      year.to_i <=> other.year.to_i
     end
   end
 end
 
 class AmpacheSong
   include Comparable
+  include AmpacheXmlAccessor
   
-  def initialize(ar, uid, title, artist, album, url, track)
-    @ar = ar
-    @uid = uid
-    @title = title
-    @artist = artist
-    @album = album
-    @url = url
-    @track = track.to_i
-  end
-
-  attr_reader :uid, :title, :artist, :album, :url, :track
-
   def add_to_playlist(pl)
     pl.add(self)
   end
 
   def <=>(other)
-    if @album == other.album
-      @track <=> other.track
+    if album == other.album
+      track.to_i <=> other.track.to_i
     else
-      @album <=> other.album
+      album <=> other.album
     end
   end
 end
