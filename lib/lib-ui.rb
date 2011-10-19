@@ -1,5 +1,17 @@
 require 'Qt4'
 
+class CollectionProxyModel <  Qt::SortFilterProxyModel
+  def initialize
+    super
+  end
+  
+  def filterAcceptsRow(sourceRow, sourceParent)
+    return true if sourceParent.is_valid
+    
+    super(sourceRow, sourceParent)
+  end
+end
+
 class MainWidget < Qt::MainWindow
   slots 'update_collection(const QModelIndex&)'
   slots 'filter_collection(const QString&)'
@@ -46,7 +58,7 @@ class MainWidget < Qt::MainWindow
     Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
                         self, SLOT( 'filter_collection(const QString&)' ) )
     
-    @proxy_model = Qt::SortFilterProxyModel.new
+    @proxy_model = CollectionProxyModel.new
     
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
