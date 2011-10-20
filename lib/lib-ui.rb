@@ -6,7 +6,7 @@ class CollectionProxyModel <  Qt::SortFilterProxyModel
   end
   
   def filterAcceptsRow(sourceRow, sourceParent)
-    return true if sourceParent.is_valid
+    return true if sourceParent.is_valid and not source_model.item(sourceRow).text.empty?
     
     super
   end
@@ -136,7 +136,6 @@ class MainWidget < Qt::MainWindow
     albums = @ampache.albums(@collection_model.data(index, Qt::UserRole).value).sort
         
     albums.each do |album|
-      puts album.name
       string = album.name unless album.name.empty?
       string += " (#{album.year})" unless (album.year.nil? or album.year == 0)
       item = Qt::StandardItem.new(string)
@@ -145,8 +144,6 @@ class MainWidget < Qt::MainWindow
       item.editable = false
       selected_item.append_row item
     end
-    
-    @collection_view.set_model @proxy_model
   end
   
   def update_songs(index)
@@ -181,11 +178,12 @@ class MainWidget < Qt::MainWindow
       return
     end
     
-    #@proxy_model.set_source_model @collection_model
+    # the following line is needed to avoid "ghost" items
+    @proxy_model.set_source_model @collection_model
     @proxy_model.filter_reg_exp = text
     @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
     
-    #@collection_view.set_model @proxy_model
+    # for some reason, this doesn't seem to work
     @collection_view.expand_all
   end
   
