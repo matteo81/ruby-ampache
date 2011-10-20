@@ -8,7 +8,7 @@ class CollectionProxyModel <  Qt::SortFilterProxyModel
   def filterAcceptsRow(sourceRow, sourceParent)
     return true if sourceParent.is_valid
     
-    super(sourceRow, sourceParent)
+    super
   end
 end
 
@@ -59,6 +59,7 @@ class MainWidget < Qt::MainWindow
                         self, SLOT( 'filter_collection(const QString&)' ) )
     
     @proxy_model = CollectionProxyModel.new
+    @proxy_model.set_source_model @collection_model
     
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
@@ -75,6 +76,7 @@ class MainWidget < Qt::MainWindow
       update_artists
     end
     
+    @collection_view.set_model @proxy_model
     @playlist = AmpachePlaylist.new
   end
 
@@ -105,8 +107,6 @@ class MainWidget < Qt::MainWindow
       item.editable = false
       @collection_model.append_row(item)
     end
-    
-    @collection_view.set_model @collection_model
   end
     
   def update_collection(index)
@@ -122,8 +122,11 @@ class MainWidget < Qt::MainWindow
           when AmpacheAlbum then update_songs(index)
         end
       
-        filter_collection(@filter_input.text) unless @filter_input.text.empty?
-        @collection_view.expand orig_index
+        unless @filter_input.text.empty?
+          filter_collection(@filter_input.text) 
+        else
+          @collection_view.expand index
+        end
       }
    end
   end
@@ -133,7 +136,8 @@ class MainWidget < Qt::MainWindow
     albums = @ampache.albums(@collection_model.data(index, Qt::UserRole).value).sort
         
     albums.each do |album|
-      string = album.name
+      puts album.name
+      string = album.name unless album.name.empty?
       string += " (#{album.year})" unless (album.year.nil? or album.year == 0)
       item = Qt::StandardItem.new(string)
       # attach the AmpacheAlbum object as Data (to extract additional info)
@@ -141,6 +145,8 @@ class MainWidget < Qt::MainWindow
       item.editable = false
       selected_item.append_row item
     end
+    
+    @collection_view.set_model @proxy_model
   end
   
   def update_songs(index)
@@ -175,10 +181,12 @@ class MainWidget < Qt::MainWindow
       return
     end
     
-    @proxy_model.set_source_model @collection_model
+    #@proxy_model.set_source_model @collection_model
     @proxy_model.filter_reg_exp = text
     @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
-    @collection_view.set_model @proxy_model
+    
+    #@collection_view.set_model @proxy_model
+    @collection_view.expand_all
   end
   
   def update_playlist
