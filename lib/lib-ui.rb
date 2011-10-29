@@ -14,7 +14,7 @@ end
 
 class MainWidget < Qt::MainWindow
   slots 'update_collection(const QModelIndex&)'
-  slots 'filter_collection(const QString&)'
+#  slots 'filter_collection(const QString&)'
   slots 'add_to_playlist(const QModelIndex&)'
   slots 'ruby_thread_timeout()'
 
@@ -40,26 +40,23 @@ class MainWidget < Qt::MainWindow
     splitter = Qt::Splitter.new(self)
     set_central_widget(splitter)
   
-    @filter_input = Qt::LineEdit.new
-    @collection_view = Qt::TreeView.new
+    #@filter_input = Qt::LineEdit.new
+    @collection_view = Qt::TreeView.new(splitter)
     @collection_view.header_hidden = true
-    layout = Qt::VBoxLayout.new do |l|
-      l.add_widget @filter_input
-      l.add_widget @collection_view
-    end
-    collection_and_filter = Qt::Widget.new(splitter)
-    collection_and_filter.set_layout layout
+    #layout = Qt::VBoxLayout.new do |l|
+      #l.add_widget @filter_input
+    #  l.add_widget @collection_view
+    #end
+    #collection_and_filter = Qt::Widget.new(splitter)
+    #collection_and_filter.set_layout layout
     @playlist_view = Qt::ListView.new(splitter)
     
     Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
                         self, SLOT( 'update_collection(const QModelIndex&)' ) )
     Qt::Object.connect( @collection_view, SIGNAL('doubleClicked(const QModelIndex&)'),
                         self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
-    Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
-                        self, SLOT( 'filter_collection(const QString&)' ) )
-    
-    @proxy_model = CollectionProxyModel.new
-    @proxy_model.set_source_model @collection_model
+    #Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
+    #                    self, SLOT( 'filter_collection(const QString&)' ) )
     
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
@@ -75,8 +72,11 @@ class MainWidget < Qt::MainWindow
       initialize_connection
       update_artists
     end
+
+    #@proxy_model = CollectionProxyModel.new
+    #@proxy_model.set_source_model @collection_model
     
-    @collection_view.set_model @proxy_model
+    @collection_view.set_model @collection_model
     @playlist = AmpachePlaylist.new
   end
 
@@ -112,8 +112,8 @@ class MainWidget < Qt::MainWindow
   def update_collection(index)
     Thread.new do
       @collection_mutex.synchronize {
-        orig_index = index
-        index = @proxy_model.map_to_source(index) unless @filter_input.text.empty?
+        #orig_index = index
+        #index = @proxy_model.map_to_source(index) unless @filter_input.text.empty?
         selected_item = @collection_model.item_from_index(index)
         return if selected_item.has_children    
   
@@ -122,11 +122,11 @@ class MainWidget < Qt::MainWindow
           when AmpacheAlbum then update_songs(index)
         end
       
-        unless @filter_input.text.empty?
-          filter_collection(@filter_input.text) 
-        else
-          @collection_view.expand index
-        end
+        #unless @filter_input.text.empty?
+          #filter_collection(@filter_input.text) 
+        #else
+        @collection_view.expand index
+        #end
       }
    end
   end
@@ -172,20 +172,20 @@ class MainWidget < Qt::MainWindow
     event.accept
   end
       
-  def filter_collection(text)
-    if text.empty?
-      @collection_view.set_model @collection_model
-      return
-    end
+#  def filter_collection(text)
+#    if text.empty?
+#      @collection_view.set_model @collection_model
+#      return
+#    end
     
     # the following line is needed to avoid "ghost" items
-    @proxy_model.set_source_model @collection_model
-    @proxy_model.filter_reg_exp = text
-    @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
+#    @proxy_model.set_source_model @collection_model
+#    @proxy_model.filter_reg_exp = text
+#    @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
     
     # for some reason, this doesn't seem to work
-    @collection_view.expand_all
-  end
+#    @collection_view.expand_all
+#  end
   
   def update_playlist
     @playlist_model = Qt::StandardItemModel.new
