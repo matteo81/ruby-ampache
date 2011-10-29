@@ -86,4 +86,9 @@ eos
     sorted.first.uid.should == '2919'
     sorted.last.uid.should == '2918'
   end
+
+  it 'should be enumerable' do
+    @albums.all? { |album| album.uid.should_not be_nil }
+    @albums.find { |album| album.uid == '2918'}.disk.to_i.should == 2
+  end
 end
