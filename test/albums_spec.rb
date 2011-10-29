@@ -4,7 +4,7 @@ require 'nokogiri'
 describe AmpacheAlbum do
   before :each do
     @albums = []
-    xmldoc = Nokogiri::XML(<<eos
+    xmldoc = Nokogiri::XML(<<eos)
 <root>
 <album id="2910">
   <name>Back in Black</name>
@@ -53,7 +53,6 @@ describe AmpacheAlbum do
 </album>
 </root>
 eos
-  )
     xmldoc.xpath("//album").each do |a|
       @albums << AmpacheAlbum.new(self, a)
     end
@@ -73,6 +72,7 @@ eos
     @album.name.should == "Back in Black"
     @album.artist.should == "AC/DC"
     @album.preciserating.to_f.should == 3.0
+    @album.tracks.to_i.should == 12
     lambda { @album.song }.should raise_error
     lambda { @albums.last.preciserating }.should raise_error
   end

@@ -5,7 +5,7 @@ describe AmpacheSong do
   before :each do
     @songs = []
     
-    xmldoc = Nokogiri::XML(<<eos
+    xmldoc = Nokogiri::XML(<<eos)
 <root>
 <song id="1">
         <title>Nice title</title>
@@ -42,7 +42,6 @@ describe AmpacheSong do
 </song>
 </root>
 eos
-    )
     xmldoc.xpath("//song").each do |a|
       @songs << AmpacheSong.new(self, a)
     end
@@ -59,5 +58,13 @@ eos
     @songs.last.title.should == "My way"
     @songs.first.track.to_i.should == 1
     @songs[1].uid.should == "109" 
+  end
+
+  it 'should have the right id' do
+    @song.uid.should == "1"
+  end
+
+  it 'should read the attributes correctly' do
+    @song.size.to_i.should == 1241300
   end
 end
