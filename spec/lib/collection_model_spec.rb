@@ -1,6 +1,7 @@
 require 'ampache'
 require 'models'
 require 'parseconfig'
+require 'spec_helper'
 
 describe CollectionModel do
   it 'should not initialize empty' do
@@ -13,12 +14,34 @@ describe CollectionModel do
 
   describe 'with a working Ampache session' do
     before :each do
-      @ampache = Ampache::Session.from_config_file
-      @model = CollectionModel.new @ampache
+      Ampache::Session.instance.stub(:call_api_method) do |method, args|
+        Nokogiri::XML(<<eos) if method == "artists"
+<root>
+<artist id="12039">
+  <name>Metallica</name>
+  <albums>15</albums>
+  <songs>52</songs>
+  <tag id="2481" count="2">Rock & Roll</tag>
+  <tag id="2482" count="1">Rock</tag>
+  <tag id="2483" count="1">Roll</tag>
+  <preciserating>3</preciserating>
+  <rating>2.9</rating>
+</artist>
+<artist id="271">
+  <name>The Arcade Fire</name>
+  <albums>3</albums>
+  <songs>15</songs>
+  <preciserating>4</preciserating>
+  <rating>4.9</rating>
+</artist>
+</root>
+eos
+      end
+      @model = CollectionModel.new Ampache::Session.instance
     end
 
     it 'should have some data' do
-      @model.rowCount.should > 0
+      @model.rowCount.should == 2
     end
 
     it 'should fetch data' do
@@ -33,13 +56,20 @@ describe CollectionModel do
       @model.data(index).value.should be_an_instance_of String
       @model.data(index, Qt::UserRole).value.should be_an_instance_of Ampache::Artist
     end
+                       
+    it 'should parse the data correctly depending on role' do
+      index = mock_index 1,0
+      @model.data(index).value.should == 'The Arcade Fire'
+      artist = @model.data(index, Qt::UserRole).value
+      artist.name.should == "The Arcade Fire"
+    end
 
     it 'should not have correct data when accessing out of bounds' do
       @model.data(mock_index(-10, 0)).should_not be_valid
-      @model.data(mock_index(100, 0)).should_not be_valid
+      @model.data(mock_index(2, 0)).should_not be_valid
     end
 
-    it "Should Not Be Editable" do
+    it 'should not be editable' do
       @model.data(mock_index(1,0), Qt::EditRole).should_not be_valid
       @model.headerData(nil, nil, Qt::EditRole).should_not be_valid
                               
