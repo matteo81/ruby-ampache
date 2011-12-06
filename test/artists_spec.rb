@@ -4,7 +4,7 @@ require 'nokogiri'
 describe AmpacheArtist do
   before :each do
     @artists = []
-    xmldoc = Nokogiri::XML(<<eos
+    xmldoc = Nokogiri::XML(<<eos)
 <root>
 <artist id="12039">
   <name>Metallica</name>
@@ -25,7 +25,6 @@ describe AmpacheArtist do
 </artist>
 </root>
 eos
-  )
     xmldoc.xpath("//artist").each do |a|
       @artists << AmpacheArtist.new(self, a)
     end
