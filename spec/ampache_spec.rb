@@ -47,11 +47,7 @@ EOS
       @session.stats.update.month.should == 12
       @session.stats.update.day.should == 6
       @session.stats.songs.should == 36
+      @session.stats.version.should == '350001'
     end
-  end 
-#  it 'should have stats' do
-#    @ar.stats.artists.should > 0
-#    @ar.stats.albums.should > 0
-#    @ar.stats.songs.should > 0
-#  end
+  end
 end
