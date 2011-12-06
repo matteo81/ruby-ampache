@@ -1,0 +1,2 @@
+require 'ampache'
+require 'nokogiri'
