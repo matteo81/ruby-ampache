@@ -76,6 +76,25 @@ class AmpacheSong
   end
 end
 
+class Playlist
+  def initialize
+    @list = []
+  end
+  
+  def add(song)
+    @list << song
+  end
+  
+  def <<(song)
+    add(song)
+  end
+  
+  def each
+    @list.each {|i| yield(i)}
+  end
+end
+
+
 class AmpachePlaylist
 
   def initialize

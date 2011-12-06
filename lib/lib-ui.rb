@@ -12,6 +12,68 @@ class CollectionProxyModel <  Qt::SortFilterProxyModel
   end
 end
 
+class PlaylistModel < Qt::AbstractTableModel
+  attr_accessor :playlist
+  def initialize(playlist = [], parent = nil)
+    super(parent)
+    
+    @playlist = playlist
+  end
+  
+  def rowCount(parent)
+    @playlist.count
+  end
+  
+  def columnCount(parent)
+    4
+  end
+  
+  def data(index, role)
+    return nil if (index.valid? || index.row > @playlist.count || index.row < 0)
+    
+    if (role == Qt::DisplayRole)
+      song = @playlist[index.row]
+      case (index.column)
+      when 0
+        return song.track
+      when 1
+        return song.title
+      when 2
+        return song.artist
+      when 3
+        return song.album
+      end
+    end
+  end
+  
+  def headerData(section, orientation, role)
+    return if role!=Qt::DisplayRole
+    
+    if (orientation == Qt::Horizontal)
+      case section
+      when 0
+        return "Track"
+      when 1
+        return "Title"
+      when 2
+        return "Artist"
+      when 3
+        return "Album"
+      end
+    end
+  end
+  
+  def insertRows(position, rows, index)
+    beginInsertRows(Qt::ModelIndex.new, position, position+rows-1)
+    
+    rows.times do |row|
+      @playlist.insert(position, nil)
+    end
+  end
+  
+  
+end
+
 class MainWidget < Qt::MainWindow
   slots 'update_collection(const QModelIndex&)'
 #  slots 'filter_collection(const QString&)'
@@ -49,7 +111,7 @@ class MainWidget < Qt::MainWindow
     #end
     #collection_and_filter = Qt::Widget.new(splitter)
     #collection_and_filter.set_layout layout
-    @playlist_view = Qt::ListView.new(splitter)
+    @playlist_view = Qt::TableView.new(splitter)
     
     Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
                         self, SLOT( 'update_collection(const QModelIndex&)' ) )
@@ -77,7 +139,7 @@ class MainWidget < Qt::MainWindow
     #@proxy_model.set_source_model @collection_model
     
     @collection_view.set_model @collection_model
-    @playlist = AmpachePlaylist.new
+    @playlist = Playlist.new
   end
 
   def initialize_connection
@@ -161,14 +223,11 @@ class MainWidget < Qt::MainWindow
   end
   
   def add_to_playlist(index)
-    @playlist.stop
-    @playlist = AmpachePlaylist.new
     @collection_model.data(index, Qt::UserRole).value.add_to_playlist @playlist
     update_playlist
   end
   
   def closeEvent(event)
-    @playlist.stop
     event.accept
   end
       
@@ -190,8 +249,8 @@ class MainWidget < Qt::MainWindow
   def update_playlist
     @playlist_model = Qt::StandardItemModel.new
     @playlist.each do |song|
-      string = "#{song.track}. #{song.title}"
-      item = Qt::StandardItem.new(string)
+      string = "#{song.title}"
+      item = Qt::TableWidgetItem.new(string)
       # attach the AmpacheSong object as Data (to extract additional info)
       item.setData(Qt::Variant.from_value(song), Qt::UserRole)
       item.setEditable false
