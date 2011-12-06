@@ -8,6 +8,8 @@ require 'digest/sha2'
 require 'date'
 require 'parseconfig'
 require 'singleton'
+require 'open4'
+require 'timeout'
 
 =begin
 A session is a singleton so it cannot be directly initialized. Two initialization methods
@@ -65,7 +67,7 @@ module Ampache
       artists = []
       doc = call_api_method("artists", args)
       doc.xpath("//artist").each do |a|
-        artists << Artist.new(self, a)
+        artists << Artist.new(a)
       end
       return artists
     end
@@ -75,7 +77,7 @@ module Ampache
       args = {'filter' => artist.uid.to_s}
       doc = call_api_method("artist_albums", args)
       doc.xpath("//album").each do |a|
-        albums << Album.new(self, a)
+        albums << Album.new(a)
       end
       return albums
     end
@@ -85,7 +87,7 @@ module Ampache
       args = {'filter' => album.uid.to_s}
       doc = call_api_method("album_songs", args)
       doc.xpath("//song").each do |s|
-        songs << Song.new(self, s)
+        songs << Song.new(s)
       end
       return songs
     end
@@ -150,6 +152,98 @@ Artist #: #{@artists}
 Last update: #{@update}
 Last add: #{@add}
 Last clean: #{@clean}"
+    end
+  end
+  
+
+  module XmlAccessor
+    def initialize(xml)
+      @xml = xml
+    end
+    
+    def method_missing( method_name, *args )
+      @xml.children.each do |child|
+        return child.content if (child.name == method_name.to_s and child.element?)
+      end
+      super
+    end
+    
+    def uid
+      return @xml['id']
+    end
+  end
+  
+  
+  class Artist
+    include XmlAccessor
+
+    def albums
+      @albums ||= Session.instance.albums(self)
+    end
+
+    def add_to_playlist(pl)
+      albums.each do |s|
+        s.add_to_playlist(pl)
+        sleep 1
+      end
+    end  
+  end
+
+  class Album
+    include Comparable
+    include XmlAccessor
+    
+    def songs
+      @songs ||= Session.instance.songs(self)
+    end
+
+    def add_to_playlist(pl)
+      songs.each do |s|
+        s.add_to_playlist(pl)
+      end
+    end
+
+    def <=>(other)
+      if name == other.name
+        disk.to_i <=> other.disk.to_i
+      else 
+        year.to_i <=> other.year.to_i
+      end
+    end
+  end
+
+  class Song
+    include Comparable
+    include XmlAccessor
+    
+    def add_to_playlist(pl)
+      pl.add(self)
+    end
+
+    def <=>(other)
+      if album == other.album
+        track.to_i <=> other.track.to_i
+      else
+        album <=> other.album
+      end
+    end
+  end
+
+  class Playlist
+    def initialize
+      @list = []
+    end
+    
+    def add(song)
+      @list << song
+    end
+    
+    def <<(song)
+      add(song)
+    end
+    
+    def each
+      @list.each {|i| yield(i)}
     end
   end
 end
