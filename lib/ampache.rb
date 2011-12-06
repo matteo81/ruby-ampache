@@ -105,7 +105,7 @@ module Ampache
         doc = call_api_method(action, args);
 
         @stats = Stats.new(doc.at("songs").content, doc.at("albums").content, doc.at("artists").content, 
-                          doc.at("update").content, doc.at("add").content, doc.at("clean").content, doc.at("version").content)
+                          doc.at("update").content, doc.at("add").content, doc.at("clean").content, doc.at("api").content)
         return doc.at("auth").content
       rescue Exception => e 
         raise "token not valid or expired, check your username and password"
@@ -135,15 +135,15 @@ module Ampache
   end
 
   class Stats
-  attr_reader :songs, :albums, :artists, :update, :add, :clean, :version
-    def initialize(songs, albums, artists, update, add, clean, version)
+  attr_reader :songs, :albums, :artists, :update, :add, :clean, :api
+    def initialize(songs, albums, artists, update, add, clean, api)
       @songs = songs.to_i
       @albums = albums.to_i
       @artists = artists.to_i
       @update = DateTime.parse update
       @add = DateTime.parse add
       @clean = DateTime.parse clean
-      @version = version
+      @api = api
     end
     
     def to_s

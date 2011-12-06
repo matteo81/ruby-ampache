@@ -14,17 +14,19 @@ describe Ampache::Session do
       @session = Ampache::Session.instance
       Ampache::Session.instance.stub(:call_api_method) do |method, args|
           Nokogiri::XML(<<EOS) if method == "handshake"
+<?xml version="1.0" encoding="UTF-8" ?>
 <root>
-    <auth>TOKEN</auth>
-    <version>350001</version>
-    <update>2011-12-06T16:38Z</update>
-    <add>2011-12-06T16:38Z</add>
-    <clean>2011-12-06T16:38Z</clean>
-    <songs>36</songs>
-    <artists>2</artists>
-    <albums>3</albums>
-    <tags>0</tags>
-    <videos>0</videos>
+        <auth><![CDATA[TOKEN]]></auth>
+        <api><![CDATA[350001]]></api>
+        <update><![CDATA[2011-12-06T01:00:00+01:00]]></update>
+        <add><![CDATA[2011-12-06T06:25:36+01:00]]></add>
+        <clean><![CDATA[2011-12-06T06:25:29+01:00]]></clean>
+        <songs><![CDATA[36]]></songs>
+        <albums><![CDATA[3]]></albums>
+        <artists><![CDATA[2]]></artists>
+        <playlists><![CDATA[0]]></playlists>
+        <videos><![CDATA[0]]></videos>
+
 </root>
 EOS
       end
@@ -46,7 +48,7 @@ EOS
       @session.stats.update.month.should == 12
       @session.stats.update.day.should == 6
       @session.stats.songs.should == 36
-      @session.stats.version.should == '350001'
+      @session.stats.api.should == '350001'
     end
   end
 end
