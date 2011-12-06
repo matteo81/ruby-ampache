@@ -28,6 +28,19 @@ class AmpacheRuby
     @token = getAuthToken(user, psw)
   end
 
+  def self.from_config_file
+    begin
+      ar_config = ParseConfig.new(File.expand_path('~/.ruby-ampache'))
+      $options = {}
+      $options[:path] = ar_config.get_value('MPLAYER_PATH')
+      $options[:timeout] = ar_config.get_value('TIMEOUT').to_i
+    rescue
+      raise "\nPlease create a .ruby-ampache file on your home\n See http://github.com/ghedamat/ruby-ampache for infos\n"
+    end
+
+    AmpacheRuby.new(ar_config.get_value('AMPACHE_HOST'), ar_config.get_value('AMPACHE_USER'), ar_config.get_value('AMPACHE_USER_PSW'))
+  end
+
   attr_reader :stats
   attr_accessor :host, :path, :user, :psw, :token, :playlist
 
