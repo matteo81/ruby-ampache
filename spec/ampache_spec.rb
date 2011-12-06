@@ -13,7 +13,7 @@ describe Ampache::Session do
     before :each do
       @session = Ampache::Session.instance
       @session.stub(:call_api_method) do |method, args|
-          Nokogiri::XML(<<EOS
+          Nokogiri::XML(<<EOS) if method == "handshake"
 <root>
     <auth>TOKEN</auth>
     <version>350001</version>
@@ -27,7 +27,6 @@ describe Ampache::Session do
     <videos>0</videos>
 </root>
 EOS
-                       ) if method == "handshake"
       end
          
       Ampache::Session.handshake('', '', '')

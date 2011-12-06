@@ -1,7 +1,5 @@
-require '../lib/lib-mvc'
-require '../lib/lib-ampache'
+require 'ampache'
 require 'parseconfig'
-require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe CollectionModel do
   it 'should not initialize empty' do

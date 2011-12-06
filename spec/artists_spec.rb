@@ -1,7 +1,7 @@
-require '../lib/lib-classes'
+require 'ampache'
 require 'nokogiri'
 
-describe AmpacheArtist do
+describe Ampache::Artist do
   before :each do
     @artists = []
     xmldoc = Nokogiri::XML(<<eos)
@@ -26,7 +26,7 @@ describe AmpacheArtist do
 </root>
 eos
     xmldoc.xpath("//artist").each do |a|
-      @artists << AmpacheArtist.new(self, a)
+      @artists << Ampache::Artist.new(a)
     end
     @artist = @artists.first
   end
@@ -40,10 +40,18 @@ eos
     @artist.uid.should == '12039'
   end
   
-  it 'should return all the artist information' do
+  it 'should parse the first artist information' do
     @artist.name.should == "Metallica"
     @artist.rating.to_f.should == 2.9
     @artist.preciserating.to_i.should == 3
     @artist.songs.to_i.should == 52
+  end
+                          
+  it 'should parse the last artist information' do
+    artist = @artists.last
+    artist.name.should == "The Arcade Fire"
+    artist.rating.to_f.should == 4.9
+    artist.preciserating.to_i.should == 4
+    artist.songs.to_i.should == 15
   end
 end

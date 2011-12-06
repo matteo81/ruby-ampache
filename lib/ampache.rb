@@ -156,7 +156,6 @@ Last clean: #{@clean}"
     end
   end
   
-
   module XmlAccessor
     def initialize(xml)
       @xml = xml
@@ -173,7 +172,6 @@ Last clean: #{@clean}"
       return @xml['id']
     end
   end
-  
   
   class Artist
     include XmlAccessor

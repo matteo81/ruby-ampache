@@ -1,7 +1,7 @@
-require '../lib/lib-classes'
+require 'ampache'
 require 'nokogiri'
 
-describe AmpacheSong do
+describe Ampache::Song do
   before :each do
     @songs = []
     
@@ -43,7 +43,7 @@ describe AmpacheSong do
 </root>
 eos
     xmldoc.xpath("//song").each do |a|
-      @songs << AmpacheSong.new(self, a)
+      @songs << Ampache::Song.new(a)
     end
     @song = @songs.first
   end

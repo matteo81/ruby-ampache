@@ -1,7 +1,7 @@
-require '../lib/lib-classes'
+require 'ampache'
 require 'nokogiri'
 
-describe AmpacheAlbum do
+describe Ampache::Album do
   before :each do
     @albums = []
     xmldoc = Nokogiri::XML(<<eos)
@@ -54,7 +54,7 @@ describe AmpacheAlbum do
 </root>
 eos
     xmldoc.xpath("//album").each do |a|
-      @albums << AmpacheAlbum.new(self, a)
+      @albums << Ampache::Album.new(a)
     end
     @album = @albums.first
   end

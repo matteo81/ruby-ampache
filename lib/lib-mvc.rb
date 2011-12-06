@@ -1,6 +1,5 @@
 require 'Qt4'
-require File.join(File.dirname(__FILE__), 'lib-ampache')
-require File.join(File.dirname(__FILE__), 'lib-classes')
+require 'ampache'
 
 class CollectionModel < Qt::AbstractListModel
   def initialize(ampache, parent = nil)
