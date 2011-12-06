@@ -4,6 +4,3 @@ RSpec::Matchers.define :have_flag do |flag|
   end
 end
 
-def mock_index(row, col)
-  stub(:row => row, :column => col)
-end

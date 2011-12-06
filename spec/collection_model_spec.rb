@@ -1,4 +1,5 @@
 require 'ampache'
+require 'models'
 require 'parseconfig'
 
 describe CollectionModel do
@@ -12,7 +13,7 @@ describe CollectionModel do
 
   describe 'with a working Ampache session' do
     before :each do
-      @ampache = AmpacheRuby.from_config_file
+      @ampache = Ampache::Session.from_config_file
       @model = CollectionModel.new @ampache
     end
 
@@ -30,7 +31,7 @@ describe CollectionModel do
     it 'should return correct types depending on role' do
       index = mock_index 0,0
       @model.data(index).value.should be_an_instance_of String
-      @model.data(index, Qt::UserRole).value.should be_an_instance_of AmpacheArtist
+      @model.data(index, Qt::UserRole).value.should be_an_instance_of Ampache::Artist
     end
 
     it 'should not have correct data when accessing out of bounds' do
