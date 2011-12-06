@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# encoding:  UTF-8
+
+def secure_require(name)
+  begin
+    require name
+  rescue LoadError
+    $stderr.print "#{File.basename(__FILE__)} requires #{name} gem to work\n Please install it with: gem install #{name}\n"
+    exit
+  end
+end
+
+require 'rubygems'
+secure_require 'parseconfig'
+require 'Qt4'
+
+require File.join(File.dirname(__FILE__), '..', 'lib', 'ampache')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'models')
+
+as = Ampache::Session.from_config_file
+collection_model = CollectionModel.new as
+
+# start main application
+Qt::Application.new(ARGV) do
+  # initialize and show the main widget
+  
+  list = Qt::ListView.new do
+    set_model collection_model
+  end
+
+  list.show
+  exec
+end
