@@ -3,8 +3,8 @@ require 'nokogiri'
 
 describe Ampache::Artist do
   before :each do
-    @artists = []
-    xmldoc = Nokogiri::XML(<<eos)
+    Ampache::Session.instance.stub(:call_api_method) do |method, args|
+          Nokogiri::XML(<<eos) if method == "artists"
 <root>
 <artist id="12039">
   <name>Metallica</name>
@@ -25,9 +25,8 @@ describe Ampache::Artist do
 </artist>
 </root>
 eos
-    xmldoc.xpath("//artist").each do |a|
-      @artists << Ampache::Artist.new(a)
     end
+    @artists = Ampache::Session.instance.artists
     @artist = @artists.first
   end
   

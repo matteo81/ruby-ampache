@@ -2,9 +2,11 @@ require 'ampache'
 require 'nokogiri'
 
 describe Ampache::Album do
+  let(:artist) { double("Ampache::Artist") }
+  
   before :each do
-    @albums = []
-    xmldoc = Nokogiri::XML(<<eos)
+    Ampache::Session.instance.stub(:call_api_method) do |method, args|
+          Nokogiri::XML(<<eos) if method == "artist_albums"
 <root>
 <album id="2910">
   <name>Back in Black</name>
@@ -53,12 +55,12 @@ describe Ampache::Album do
 </album>
 </root>
 eos
-    xmldoc.xpath("//album").each do |a|
-      @albums << Ampache::Album.new(a)
     end
+    artist.stub(:uid) { 0 }
+    @albums = Ampache::Session.instance.albums(artist)
     @album = @albums.first
   end
-  
+
   it 'exists' do
     @album.nil?.should == false
     @albums.count.should == 4

@@ -12,7 +12,7 @@ describe Ampache::Session do
   context 'with a working Ampache server' do
     before :each do
       @session = Ampache::Session.instance
-      @session.stub(:call_api_method) do |method, args|
+      Ampache::Session.instance.stub(:call_api_method) do |method, args|
           Nokogiri::XML(<<EOS) if method == "handshake"
 <root>
     <auth>TOKEN</auth>
