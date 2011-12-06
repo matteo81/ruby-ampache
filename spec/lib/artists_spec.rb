@@ -52,5 +52,6 @@ eos
     artist.rating.to_f.should == 4.9
     artist.preciserating.to_i.should == 4
     artist.songs.to_i.should == 15
+    artist.albums.to_i.should == 3
   end
 end

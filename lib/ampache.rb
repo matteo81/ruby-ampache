@@ -176,7 +176,7 @@ Last clean: #{@clean}"
   class Artist
     include XmlAccessor
 
-    def albums
+    def discography
       @albums ||= Session.instance.albums(self)
     end
 
