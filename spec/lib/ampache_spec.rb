@@ -26,7 +26,6 @@ describe Ampache::Session do
         <artists><![CDATA[2]]></artists>
         <playlists><![CDATA[0]]></playlists>
         <videos><![CDATA[0]]></videos>
-
 </root>
 EOS
       end
