@@ -27,7 +27,7 @@ Qt::Application.new(ARGV) do
   list = Qt::ListView.new do
     set_model collection_model
   end
-
+  list.style_sheet = "background-color: light gray; border-style: null"
   list.show
   exec
 end

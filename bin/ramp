@@ -12,12 +12,10 @@ end
 
 require 'rubygems'
 secure_require 'parseconfig'
-secure_require 'iconv'
 require 'Qt4'
 
-require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ampache')
-require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-classes')
-require File.join(File.dirname(__FILE__), '..', 'lib', 'lib-ui')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'ampache')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'ui', 'mainwindow')
 
 # start main application
 Qt::Application.new(ARGV) do

@@ -37,18 +37,6 @@ class CollectionModel < Qt::AbstractListModel
     end
 end
 
-class CollectionProxyModel <  Qt::SortFilterProxyModel
-  def initialize
-    super
-  end
-  
-  def filterAcceptsRow(sourceRow, sourceParent)
-    return true if sourceParent.is_valid and not source_model.item(sourceRow).text.empty?
-    
-    super
-  end
-end
-
 class PlaylistModel < Qt::AbstractTableModel
   attr_accessor :playlist
   def initialize(playlist = [], parent = nil)
@@ -66,7 +54,7 @@ class PlaylistModel < Qt::AbstractTableModel
   end
   
   def data(index, role)
-    return nil if (index.valid? || index.row > @playlist.count || index.row < 0)
+    return invalid if (index.valid? || index.row > @playlist.count || index.row < 0)
     
     if (role == Qt::DisplayRole)
       song = @playlist[index.row]
@@ -84,7 +72,7 @@ class PlaylistModel < Qt::AbstractTableModel
   end
   
   def headerData(section, orientation, role)
-    return if role!=Qt::DisplayRole
+    return invalid if role!=Qt::DisplayRole
     
     if (orientation == Qt::Horizontal)
       case section
@@ -107,4 +95,9 @@ class PlaylistModel < Qt::AbstractTableModel
       @playlist.insert(position, nil)
     end
   end
+  
+  private
+    def invalid
+      Qt::Variant.new
+    end
 end
