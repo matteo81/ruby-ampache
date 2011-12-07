@@ -48,7 +48,7 @@ EOS
       @session.stats.update.month.should == 12
       @session.stats.update.day.should == 6
       @session.stats.songs.should == 36
-      @session.stats.api.should == '350001'
+      @session.stats.version.should == '350001'
     end
   end
 end

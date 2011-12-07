@@ -93,22 +93,19 @@ module Ampache
     end
     
     # tries to obtain an auth token
-    def get_auth_token(user, psw)
+    def get_auth_token(user, psw)    
+      action = "handshake"
+      # auth string
+      key = Digest::SHA2.new << psw
+      time = Time.now.to_i.to_s
+      psk = Digest::SHA2.new << (time + key.to_s)
       begin
-        action = "handshake"
-        # auth string
-        key = Digest::SHA2.new << psw
-        time = Time.now.to_i.to_s
-        psk = Digest::SHA2.new << (time + key.to_s)
-
         args = {'auth' => psk, 'timestamp'=> time, 'version' => '350001', 'user' => user}
         doc = call_api_method(action, args);
-
-        @stats = Stats.new(doc.at("songs").content, doc.at("albums").content, doc.at("artists").content, 
-                          doc.at("update").content, doc.at("add").content, doc.at("clean").content, doc.at("api").content)
+        @stats = Stats.new(doc)
         return doc.at("auth").content
       rescue Exception => e 
-        raise "token not valid or expired, check your username and password"
+        raise "Token not valid or expired, check your username and password\n#{e}"
       end
     end
 
@@ -135,17 +132,25 @@ module Ampache
   end
 
   class Stats
-  attr_reader :songs, :albums, :artists, :update, :add, :clean, :api
-    def initialize(songs, albums, artists, update, add, clean, api)
-      @songs = songs.to_i
-      @albums = albums.to_i
-      @artists = artists.to_i
-      @update = DateTime.parse update
-      @add = DateTime.parse add
-      @clean = DateTime.parse clean
-      @api = api
+  attr_reader :songs, :albums, :artists, :update, :add, :clean, :version
+    def initialize(doc)
+      @songs = doc.at("songs").content.to_i
+      @albums = doc.at("albums").content.to_i
+      @artists = doc.at("artists").content.to_i
+      @update = DateTime.parse doc.at("update").content
+      @add = DateTime.parse doc.at("add").content
+      @clean = DateTime.parse doc.at("clean").content
+      
+      # the API version is sometimes called 'api'
+      # and sometimes 'version'
+      @version = ''
+      begin
+        @version = doc.at("api").content
+      rescue
+        @version = doc.at("version").content
+      end
     end
-    
+       
     def to_s
       "Song #: #{@songs}
 Album #: #{@albums}
