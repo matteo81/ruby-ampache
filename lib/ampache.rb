@@ -181,7 +181,7 @@ Last clean: #{@clean}"
   class Artist
     include XmlAccessor
 
-    def discography
+    def get_albums
       @albums ||= Session.instance.albums(self)
     end
 
@@ -197,7 +197,7 @@ Last clean: #{@clean}"
     include Comparable
     include XmlAccessor
     
-    def songs
+    def get_songs
       @songs ||= Session.instance.songs(self)
     end
 
