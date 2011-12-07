@@ -37,6 +37,78 @@ class CollectionModel < Qt::AbstractListModel
     end
 end
 
+class AlbumModel < Qt::AbstractListModel
+  def initialize(artist, parent = nil)
+    super(parent)
+    
+    @albums = Ampache::Session.instance.albums(artist).sort
+  end
+  
+  def rowCount(parent = nil)
+    @albums.count
+  end
+  
+  def data(index, role = Qt::DisplayRole)
+    item = @albums[index.row]
+    return invalid if item.nil?
+    
+    return Qt::Variant.new(item.name) if role == Qt::DisplayRole
+    return Qt::Variant.from_value(item) if role == Qt::UserRole
+    return invalid
+  end
+  
+  def headerData(section, orientation, role)
+    return invalid unless role == Qt::DisplayRole
+    
+    'album' if orientation == Qt::Horizontal
+  end
+  
+  def flags(index)
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled
+  end
+  
+  private
+    def invalid
+      Qt::Variant.new
+    end
+end
+
+class SongModel < Qt::AbstractListModel
+  def initialize(album, parent = nil)
+    super(parent)
+    
+    @songs = Ampache::Session.instance.songs(album).sort
+  end
+  
+  def rowCount(parent = nil)
+    @songs.count
+  end
+  
+  def data(index, role = Qt::DisplayRole)
+    item = @songs[index.row]
+    return invalid if item.nil?
+    
+    return Qt::Variant.new(item.title) if role == Qt::DisplayRole
+    return Qt::Variant.from_value(item) if role == Qt::UserRole
+    return invalid
+  end
+  
+  def headerData(section, orientation, role)
+    return invalid unless role == Qt::DisplayRole
+    
+    'song' if orientation == Qt::Horizontal
+  end
+  
+  def flags(index)
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled
+  end
+  
+  private
+  def invalid
+    Qt::Variant.new
+  end
+end
+
 class PlaylistModel < Qt::AbstractTableModel
   attr_accessor :playlist
   def initialize(playlist = [], parent = nil)

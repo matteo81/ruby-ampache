@@ -80,3 +80,69 @@ eos
     end
   end
 end
+
+describe AlbumModel do
+  let(:artist) { double("Ampache::Artist") }
+
+  context 'with an Ampache session' do                     
+    before :each do
+      Ampache::Session.instance.stub(:call_api_method) do |method, args|
+        Nokogiri::XML(<<-eos) if method == "artist_albums"
+<root>
+<album id="2910">
+<name>Back in Black</name>
+<artist id="129348">AC/DC</artist>
+<year>1984</year>
+<tracks>12</tracks>
+<disk>1</disk>
+<tag id="2481" count="2">Rock & Roll</tag>
+<tag id="2482" count="1">Rock</tag>
+<tag id="2483" count="1">Roll</tag>
+<art>http://localhost/image.php?id=129348</art>
+<preciserating>3</preciserating>
+<rating>2.9</rating>
+</album>
+<album id="2917">
+<name>Back in Red</name>
+<artist id="129348">AC/DC</artist>
+<year>1986</year>
+<tracks>11</tracks>
+<disk>1</disk>
+<tag id="2481" count="2">Rock & Roll</tag>
+<tag id="2482" count="1">Rock</tag>
+<tag id="2483" count="1">Roll</tag>
+<preciserating>3.3</preciserating>
+<rating>2.1</rating>
+</album>
+<album id="2918">
+<name>Back in Red</name>
+<artist id="129348">AC/DC</artist>
+<year>1986</year>
+<tracks>15</tracks>
+<disk>2</disk>
+<tag id="2481" count="2">Rock & Roll</tag>
+<tag id="2482" count="1">Rock</tag>
+<tag id="2483" count="1">Roll</tag>
+<preciserating>3.2</preciserating>
+<rating>2.0</rating>
+</album>
+<album id="2919">
+<name>Back in Blue</name>
+<artist id="129348">AC/DC</artist>
+<year>1982</year>
+<tracks>12</tracks>
+<disk>1</disk>
+<rating>2.9</rating>
+</album>
+</root>
+eos
+      end
+      artist.stub(:uid) { 0 }
+      @model = AlbumModel.new artist
+    end
+                                       
+    it 'should have some data' do
+      @model.rowCount.should == 4
+    end
+  end
+end
