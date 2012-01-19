@@ -128,9 +128,10 @@ class PlaylistModel < Qt::AbstractTableModel
   end
   
   def data(index, role = Qt::DisplayRole)
-    return invalid unless role == Qt::DisplayRole or role == Qt::EditRole
+    return invalid unless role == Qt::DisplayRole or role == Qt::UserRole
     song = @songs[index.row]
     return invalid if song.nil?
+    return Qt::Variant.from_value song if role == Qt::UserRole
     
     v = case index.column
     when 0

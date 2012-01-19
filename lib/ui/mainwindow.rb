@@ -5,12 +5,14 @@ require 'Qt4'
 require 'ampache'
 require 'models'
 require 'searchedit'
+require 'phonon'
 
 class MainWidget < Qt::Widget
   slots 'show_albums(const QModelIndex&)'
   slots 'show_songs(const QModelIndex&)'
   slots 'filter_collection(const QString&)'
   slots 'add_to_playlist(const QModelIndex&)'
+  slots 'play(const QModelIndex&)'
   slots 'ruby_thread_timeout()'
 
   def ruby_thread_timeout
@@ -82,6 +84,8 @@ class MainWidget < Qt::Widget
                         self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
     Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
                         self, SLOT( 'filter_collection(const QString&)' ) )
+    Qt::Object.connect( @playlist_view, SIGNAL('doubleClicked(const QModelIndex&)'),
+                        self, SLOT( 'play(const QModelIndex&)' ) )
     
     # Enable ruby threading
     @ruby_thread_sleep_period = 0.01
@@ -100,6 +104,9 @@ class MainWidget < Qt::Widget
       @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
       @collection_view.set_model @proxy_model
     end
+    
+    @player = Phonon::MediaObject.new
+    Phonon::createPath(@player, Phonon::AudioOutput.new(Phonon::MusicCategory))
   end
 
   def initialize_connection
@@ -135,6 +142,14 @@ class MainWidget < Qt::Widget
   def add_to_playlist(index)
     selected_item = @song_model.data(index, Qt::UserRole).value
     @playlist_model.append selected_item
+  end
+  
+  def play(index)
+    selected_item = @playlist_model.data(index, Qt::UserRole).value
+    
+    @player.stop
+    @player.current_source = Phonon::MediaSource.new(selected_item.url)
+    @player.play
   end
 
   def stack_show(widget)
