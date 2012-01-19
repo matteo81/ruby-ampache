@@ -71,8 +71,8 @@ class MainWidget < Qt::Widget
       l.add_widget @stack
     end
     
-    @playlist_model = PlaylistModel.new
-    @playlist_view.model = @playlist_model
+    @playlist = PlaylistModel.new
+    @playlist_view.model = @playlist
 
     stack_show :artist
     
@@ -141,11 +141,11 @@ class MainWidget < Qt::Widget
   
   def add_to_playlist(index)
     selected_item = @song_model.data(index, Qt::UserRole).value
-    @playlist_model.append selected_item
+    @playlist << selected_item
   end
   
   def play(index)
-    selected_item = @playlist_model.data(index, Qt::UserRole).value
+    selected_item = @playlist.data(index, Qt::UserRole).value
     
     @player.stop
     @player.current_source = Phonon::MediaSource.new(selected_item.url)

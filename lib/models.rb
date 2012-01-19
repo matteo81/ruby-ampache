@@ -189,8 +189,7 @@ class PlaylistModel < Qt::AbstractTableModel
     end
   end
   
-  def append(song)
-    puts "rowCount: #{rowCount}"
+  def <<(song)
     beginInsertRows(Qt::ModelIndex.new, rowCount, rowCount);
     @songs << song
     endInsertRows
