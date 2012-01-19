@@ -53,7 +53,7 @@ class MainWidget < Qt::Widget
     @collection_view = Qt::ListView.new
     @album_view = Qt::ListView.new
     @songs_view = Qt::ListView.new
-    @playlist_view = Qt::ListView.new
+    @playlist_view = Qt::TableView.new
     #@collection_view.style_sheet = "border-style: null"
     @filter_input = SearchEdit.new
     
@@ -69,14 +69,17 @@ class MainWidget < Qt::Widget
       l.add_widget @stack
     end
     
+    @playlist_model = PlaylistModel.new
+    @playlist_view.model = @playlist_model
+
     stack_show :artist
     
     Qt::Object.connect( @collection_view, SIGNAL('activated(const QModelIndex&)'),
                         self, SLOT( 'show_albums(const QModelIndex&)' ) )
     Qt::Object.connect( @album_view, SIGNAL('activated(const QModelIndex&)'),
                         self, SLOT( 'show_songs(const QModelIndex&)' ) )
-#     Qt::Object.connect( @collection_view, SIGNAL('doubleClicked(const QModelIndex&)'),
-#                         self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
+    Qt::Object.connect( @songs_view, SIGNAL('doubleClicked(const QModelIndex&)'),
+                        self, SLOT( 'add_to_playlist(const QModelIndex&)' ) )
     Qt::Object.connect( @filter_input, SIGNAL('textChanged(const QString&)'),
                         self, SLOT( 'filter_collection(const QString&)' ) )
     
@@ -96,10 +99,7 @@ class MainWidget < Qt::Widget
       @proxy_model.source_model = @collection_model
       @proxy_model.filter_case_sensitivity = Qt::CaseInsensitive
       @collection_view.set_model @proxy_model
-    end  
-
-    #@proxy_model = CollectionProxyModel.new
-    #@proxy_model.set_source_model @collection_model
+    end
   end
 
   def initialize_connection
@@ -132,6 +132,11 @@ class MainWidget < Qt::Widget
     stack_show :song
   end
   
+  def add_to_playlist(index)
+    selected_item = @song_model.data(index, Qt::UserRole).value
+    @playlist_model.append selected_item
+  end
+
   def stack_show(widget)
     case widget
     when :artist

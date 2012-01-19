@@ -110,62 +110,89 @@ class SongModel < Qt::AbstractListModel
 end
 
 class PlaylistModel < Qt::AbstractTableModel
-  attr_accessor :playlist
-  def initialize(playlist = [], parent = nil)
+  signals 'dataChanged(int, int)'
+
+  def initialize(songs = [], parent = nil)
     super(parent)
     
-    @playlist = playlist
+    @songs = []
+    @songs = songs if (songs)
   end
   
-  def rowCount(parent)
-    @playlist.count
+  def rowCount(parent = nil)
+    @songs.size
   end
   
-  def columnCount(parent)
+  def columnCount(parent = nil)
     4
   end
   
-  def data(index, role)
-    return invalid if (index.valid? || index.row > @playlist.count || index.row < 0)
+  def data(index, role = Qt::DisplayRole)
+    return invalid unless role == Qt::DisplayRole or role == Qt::EditRole
+    song = @songs[index.row]
+    return invalid if song.nil?
     
-    if (role == Qt::DisplayRole)
-      song = @playlist[index.row]
-      case (index.column)
-      when 0
-        return song.track
-      when 1
-        return song.title
-      when 2
-        return song.artist
-      when 3
-        return song.album
-      end
-    end
+    v = case index.column
+    when 0
+      song.track.to_i
+    when 1
+      song.title
+    when 2
+      song.artist
+    when 3
+      song.album
+    else
+      raise "invalid column #{index.column}"
+    end || ""
+    return Qt::Variant.new(v)
   end
   
   def headerData(section, orientation, role)
-    return invalid if role!=Qt::DisplayRole
+    return invalid unless role==Qt::DisplayRole
     
-    if (orientation == Qt::Horizontal)
-      case section
+    v = case orientation
+    when Qt::Horizontal
+      ["Track","Title","Artist","Album"][section]
+    else
+      ""
+    end
+
+    return Qt::Variant.new v
+  end
+
+  def flags(index)
+    return Qt::ItemIsSelectable | super(index)
+  end
+
+  def setData(index, variant, role=Qt::EditRole)
+    if index.valid? and role == Qt::EditRole
+      s = variant.toString
+      song = @songs[index.row]
+      case index.column
       when 0
-        return "Track"
+        song.track = s.to_i
       when 1
-        return "Title"
+        song.title = s
       when 2
-        return "Artist"
+        song.artist = s
       when 3
-        return "Album"
+        song.album = s
+      else
+        raise "invalid column #{index.column}"
       end
+
+      emit dataChanged(index, index)
+      return true
+    else
+      return false
     end
   end
   
-  def insertRows(position, rows, index)
-    beginInsertRows(Qt::ModelIndex.new, position, position+rows-1)
-    
-    rows.times do |row|
-      @playlist.insert(position, nil)
-    end
+  def append(song)
+    puts "rowCount: #{rowCount}"
+    beginInsertRows(Qt::ModelIndex.new, rowCount, rowCount);
+    @songs << song
+    endInsertRows
   end
   
   private
